@@ -6,6 +6,8 @@
 #define BT_KEY 9
 #define BT_RX 10
 #define BT_TX 11
+#define JOY_X A0
+#define JOY_Y A1
 
 SoftwareSerial BTSerial(BT_RX, BT_TX); // Arduino ↔ HC-05/06
 MPU6050 mpu(Wire);
@@ -73,18 +75,22 @@ void loop() {
       float gyroY = mpu.getGyroY();
       float gyroZ = mpu.getGyroZ();
 
-      // Send sensor data to BT module
-      BTSerial.print(accX);
-      BTSerial.print(",");
-      BTSerial.print(accY);
-      BTSerial.print(",");
-      BTSerial.print(accZ);
-      BTSerial.print(",");
-      BTSerial.print(gyroX);
-      BTSerial.print(",");
-      BTSerial.print(gyroY);
-      BTSerial.print(",");
-      BTSerial.println(gyroZ);
+       // Send sensor data to BT module
+       BTSerial.print(accX);
+       BTSerial.print(",");
+       BTSerial.print(accY);
+       BTSerial.print(",");
+       BTSerial.print(accZ);
+       BTSerial.print(",");
+       BTSerial.print(gyroX);
+       BTSerial.print(",");
+       BTSerial.print(gyroY);
+       BTSerial.print(",");
+       BTSerial.print(gyroZ);
+       BTSerial.print(",");
+       BTSerial.print(analogRead(JOY_X));
+       BTSerial.print(",");
+       BTSerial.println(analogRead(JOY_Y));
     }
   }
 }

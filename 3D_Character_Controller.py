@@ -1,10 +1,18 @@
 import serial
 import time
 import random
+import argparse
 from vpython import *
 
-# Change 'COM3' to your Bluetooth serial port (e.g., '/dev/tty.HC-05' on Mac/Linux)
-ser = serial.Serial('COM3', 9600, timeout=1)
+parser = argparse.ArgumentParser(description='3D Character Controller Game')
+parser.add_argument('--port', default='COM3', help='Serial port for Bluetooth connection (e.g., COM3, /dev/tty.HC-05)')
+args = parser.parse_args()
+
+try:
+    ser = serial.Serial(args.port, 9600, timeout=1)
+except serial.SerialException as e:
+    print(f"Error opening serial port {args.port}: {e}")
+    exit(1)
 
 scene = canvas(title='3D Character Game')
 
@@ -23,6 +31,7 @@ for i in range(3):
 # Labels
 acc_label = label(pos=vector(-7, 6, 0), text='Accel: 0, 0, 0', height=10, color=color.white)
 gyro_label = label(pos=vector(-7, 5, 0), text='Gyro: 0, 0, 0', height=10, color=color.white)
+joy_label = label(pos=vector(-7, 4, 0), text='Joy: 0, 0', height=10, color=color.white)
 score_label = label(pos=vector(-7, 3, 0), text='Score: 0', height=10, color=color.yellow)
 lives_label = label(pos=vector(-7, 2, 0), text='Lives: 3', height=10, color=color.red)
 game_over_label = label(pos=vector(0, 0, 2), text='', height=20, color=color.red, visible=False)
@@ -44,25 +53,33 @@ while True:
         line = ser.readline().decode().strip()
         if line:
             data = line.split(',')
-            if len(data) == 6:
-                accX = float(data[0])
-                accY = float(data[1])
-                accZ = float(data[2])
-                gyroX = float(data[3])
-                gyroY = float(data[4])
-                gyroZ = float(data[5])
+            if len(data) == 8:
+                try:
+                    accX = float(data[0])
+                    accY = float(data[1])
+                    accZ = float(data[2])
+                    gyroX = float(data[3])
+                    gyroY = float(data[4])
+                    gyroZ = float(data[5])
+                    joyX = int(data[6])
+                    joyY = int(data[7])
+                except ValueError:
+                    print("Invalid data received, skipping...")
+                    continue
 
                 if not game_over:
                     # Update labels
                     acc_label.text = f'Acc: {accX:.2f}, {accY:.2f}, {accZ:.2f}'
                     gyro_label.text = f'Gyro: {gyroX:.2f}, {gyroY:.2f}, {gyroZ:.2f}'
+                    joy_label.text = f'Joy: {joyX}, {joyY}'
                     score_label.text = f'Score: {score}'
                     lives_label.text = f'Lives: {lives}'
 
                     # Map accelerometer to character position
                     x_pos = accX * 2
                     y_pos = accY * 2
-                    character.pos = vector(x_pos, y_pos, 0)
+                    z_pos = (joyY - 512) / 512.0 * 5  # Map joystick Y to Z position (-5 to 5)
+                    character.pos = vector(x_pos, y_pos, z_pos)
 
                     # Map gyroscope to character rotation
                     character.rotate(angle=gyroX * 0.01, axis=vector(1, 0, 0))
